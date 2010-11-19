@@ -9,3 +9,4 @@ Todo
 * Clean up code
 * Make login work correctly
 * Add tests
+* Merge with [legacy svn repository](http://svn.intraface.dk/vih/kalender/trunk/)
