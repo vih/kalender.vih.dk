@@ -2,3 +2,6 @@ config.local.php
 uploads/*
 barcodes/*
 cache/*
+.settings/*
+.buildpath
+.project
