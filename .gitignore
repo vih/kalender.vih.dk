@@ -1,0 +1,4 @@
+config.local.php
+uploads/*
+barcodes/*
+cache/*
