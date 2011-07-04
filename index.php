@@ -9,7 +9,6 @@ require_once 'pdoext/tablegateway.php';
 require_once 'Ilib/ClassLoader.php';
 require_once 'fpdf/fpdf.php';
 
-require_once 'Monthly.php';
 set_error_handler('k_exceptions_error_handler');
 spl_autoload_register('k_autoload');
 date_default_timezone_set('Europe/Copenhagen');
@@ -218,7 +217,7 @@ class Intraface_Calender_Translator implements k_Translator
     }
 }
 
-class VIH_Calender_Index extends VIH_Intranet_Controller_Calendar_Index
+class VIH_Calender_Index extends k_Component
 {
     protected $template;
 
