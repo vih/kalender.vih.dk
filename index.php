@@ -43,6 +43,7 @@ class VIH_Calendar_IdentityLoader extends k_BasicHttpIdentityLoader
         $users = array(
       		$GLOBALS['user'] => $GLOBALS['password']
         );
+
         if (isset($users[$username]) && $users[$username] == $password) {
             return new k_AuthenticatedUser($username);
         }
@@ -537,9 +538,11 @@ class VIH_Calender_Show extends k_Component
         $tpl = $this->template->create('show');
         $content = $tpl->render($this, array('event' => $this->event));
 
+        /*
         if ($this->identity()->anonymous()) {
             return $content;
         }
+        */
 
         $tpl = $this->template->create('publishers');
         return $content . $tpl->render($this, array('publishers' => $this->getPublishers()));
@@ -571,10 +574,12 @@ class VIH_Calender_Show extends k_Component
 
     function renderHtmlUpload()
     {
+        /*
         // @todo does not work with this. What is wrong!
         if ($this->identity()->anonymous()) {
             throw new k_NotAuthorized();
         }
+        */
 
         $this->document->setTitle('Upload billede til ' . $this->getEvent()->title);
         return $this->getForm()->toHTML();
@@ -582,9 +587,11 @@ class VIH_Calender_Show extends k_Component
 
     function postMultipart()
     {
+        /*
         if ($this->identity()->anonymous()) {
             throw new k_NotAuthorized();
         }
+        */
 
         if ($this->getForm()->validate()) {
 
@@ -669,9 +676,11 @@ class VIH_Calendar_Publish extends k_Component
 {
     function dispatch()
     {
+        /*
         if ($this->identity()->anonymous()) {
             throw new k_NotAuthorized();
         }
+        */
         return parent::dispatch();
     }
 }
@@ -682,7 +691,7 @@ class VIH_Calender_Facebook extends VIH_Calendar_Publish
     protected $event_gateway;
     protected $template;
     protected $user_id;
-    protected $session;
+    protected $user;
 
     function __construct(Facebook $facebook, VIH_Calendar_TableGateway $gateway, k_TemplateFactory $template)
     {
@@ -690,13 +699,12 @@ class VIH_Calender_Facebook extends VIH_Calendar_Publish
         $this->template = $template;
         $this->facebook = $facebook;
         $me = null;
-        $this->session = $this->facebook->getSession();
+        $this->user = $this->facebook->getUser();
 
-        // Session based API call.
-        if ($this->session) {
+        if ($this->user) {
             try {
-                $this->user_id = $facebook->getUser();
-                $me = $facebook->api('/me');
+                $this->user_id = $this->facebook->getUser();
+                $me = $this->facebook->api('/me');
             } catch (FacebookApiException $e) {
                 // void
             }
@@ -716,7 +724,7 @@ class VIH_Calender_Facebook extends VIH_Calendar_Publish
 
     function renderHtml()
     {
-        if (!$this->session) {
+        if (!$this->user) {
             $this->document->setTitle('Login to Facebook');
 
             return '<a href="'.$this->facebook->getLoginUrl(array('req_perms' => 'create_event', 'display' => 'popup')).'">Login</a>';
@@ -729,15 +737,14 @@ class VIH_Calender_Facebook extends VIH_Calendar_Publish
 
     function postForm()
     {
-        if (!$this->session) {
+        if (!$this->user) {
             $this->document->setTitle('Login to Facebook');
 
-            return ('No session available. <a href="'.$this->facebook->getLoginUrl(array('req_perms' => 'create_event', 'display' => 'popup')).'">Login</a>');
+            return ('No user available. <a href="'.$this->facebook->getLoginUrl(array('req_perms' => 'create_event', 'display' => 'popup')).'">Login</a>');
         }
 
         $summary = $this->context->getEvent()->getTitle()->getText();
         $short_description = $this->context->getEvent()->getContent()->getText();
-        //$long_description = 'MultiidrÃÂ¦tsforeningen VIMI fortÃÂ¦ller hvad de byder pÃÂ¥ og laver en times spinning med pedellen.';
 
         $start_date_day = $this->context->getDateStart()->format('d');
         $start_date_month = $this->context->getDateStart()->format('m');
@@ -752,7 +759,7 @@ class VIH_Calender_Facebook extends VIH_Calendar_Publish
         $end_time_min = $this->context->getDateEnd()->format('i');
 
         // @hack to provide the correct timestamp
-        $timestamp_add = 16;
+        $timestamp_add = 9;
         $start_time_hour = $start_time_hour + $timestamp_add;
         $end_time_hour = $end_time_hour + $timestamp_add;
         // @hack end
@@ -767,7 +774,7 @@ class VIH_Calender_Facebook extends VIH_Calendar_Publish
         $end_time = mktime($end_time_hour, $end_time_min, 00, $end_date_month, $end_date_day, $end_date_year);
 
         $page_id = 93365171887;
-        $host = 'Vejle IdrÃ¦tshÃ¸jskole';
+        $host = 'Vejle Idrætshøjskole';
 
         $category = 'Education';
         $sub_category = 'Lecture';
@@ -779,30 +786,31 @@ class VIH_Calender_Facebook extends VIH_Calendar_Publish
         //'Sporting Practice',
 
         $data = array(
+            //required
             'name' => $summary,
+            'start_time' => $start_time,
+            //optional   
+            'end_time' => $end_time,
             'category' => $category,
             'subcategory' => $sub_category,
             'host' => $host,
             'location' => $location,
-            'start_time' => $start_time,
-            'end_time' => $end_time,
             'street' => 'Ørnebjergvej 28',
-            // 'city' => 'Vejle',
-            'phone' => '',
+            //'city' => 'Vejle',
+            //'phone' => '75820811',
             'email' => $email,
             'description' => $short_description,
-            'privacy_type', // OPEN, CLOSED, SECRET
+            //'privacy_type' => OPEN, // OPEN, CLOSED, SECRET
             'tagline' => $tagline,
             'page_id' => $page_id
         );
-
 
         try {
             $param  =   array(
             'method' => 'events.create',
             'uids' => $this->user_id,
             'event_info' => json_encode($data),
-            'callback'  => '' );
+            'callback'  => '');
 
             $event_id = $this->facebook->api($param);
         } catch (Exception $e){
@@ -815,9 +823,9 @@ class VIH_Calender_Facebook extends VIH_Calendar_Publish
 
                 $this->event_gateway->update(
                 array(
-                		'gcal_event_id' => $this->context->getEventId(),
-            			"parameter" => 'facebook_event_id',
-                		'key' => $event_id), array('id'=>$record['id']));
+                    'gcal_event_id' => $this->context->getEventId(),
+            		"parameter" => 'facebook_event_id',
+                	'key' => $event_id), array('id'=>$record['id']));
 
                 return new k_SeeOther($this->context->url(null, array('flare' => 'event republished as event id ' . $event_id)));
 
@@ -834,7 +842,7 @@ class VIH_Calender_Facebook extends VIH_Calendar_Publish
          */
 
         $this->event_gateway->insert(
-        array(
+            array(
                 'gcal_event_id' => $this->context->getEventId(),
             	"parameter" => 'facebook_event_id',
                 'key' => $event_id));
@@ -969,7 +977,7 @@ class VIH_Calender_Kultunaut extends VIH_Calendar_Publish
 
 if (realpath($_SERVER['SCRIPT_FILENAME']) == __FILE__) {
     k()
-    ->setIdentityLoader(new VIH_Calendar_IdentityLoader())
+    //->setIdentityLoader(new VIH_Calendar_IdentityLoader())
     ->setLanguageLoader(new MyLanguageLoader())->setTranslatorLoader(new SimpleTranslatorLoader())
     ->setComponentCreator(new k_InjectorAdapter(new bucket_Container(new VIH_Calender_ApplicationFactory), new VIH_Calender_Document))
     ->run('VIH_Calender_Index')
