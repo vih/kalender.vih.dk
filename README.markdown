@@ -1,12 +1,4 @@
-[kalender.vih.dk](http://kalender.vih.dk/)
+[kalender.vih.dk/foredrag](http://kalender.vih.dk/foredrag)
 ==
 
-Source code for the calendar. The source needs major cleanup.
-
-Todo
---
-
-* Clean up code
-* Make login work correctly
-* Add tests
-* Merge with [legacy svn repository](http://svn.intraface.dk/vih/kalender/trunk/)
+Source code for the calender for lectures on [kalender.vih.dk/foredrag](http://kalender.vih.dk/foredrag). It pulls the events directly from a Google Calendar. In the webinterface it is possible to add a picture to the event. All events can be printed as a PDF.
